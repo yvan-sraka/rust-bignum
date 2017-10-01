@@ -7,8 +7,6 @@ authors = ["James Sanders <sanderjd@gmail.com>"]
 name = "bignum"
 path = "src/bignum/lib.rs"
 
-[dependencies.rust-gmp]
-git = "https://github.com/thestinger/rust-gmp"
-
-[dependencies.num]
-git = "https://github.com/rust-lang/num"
+[dependencies]
+rust-gmp = "0.5.0"
+num = "0.1.40"
