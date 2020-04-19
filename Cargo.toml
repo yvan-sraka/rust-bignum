@@ -8,5 +8,7 @@ name = "bignum"
 path = "src/bignum/lib.rs"
 
 [dependencies]
+libc = "0.2.31"
 rust-gmp = "0.5.0"
 num = "0.1.40"
+rand = "0.3.16"

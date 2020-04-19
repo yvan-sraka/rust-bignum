@@ -1,30 +1,31 @@
 #![crate_id = "bignum#0.1.1-pre"]
 
-#![comment = "Bignum library for Rust"]
+//#![comment = "Bignum library for Rust"]
 #![crate_type = "rlib"]
 
-#![feature(macro_rules)]
+//#![feature(macro_rules)]
 
 extern crate libc;
 extern crate gmp;
 extern crate num;
 extern crate rand;
 
-use gmp::{Mpz, RandState};
 use std::fmt;
-use std::from_str::FromStr;
-use std::num::{One, Zero, ToStrRadix};
+use std::str::FromStr;
 use libc::c_ulong;
+use gmp::mpz::Mpz;
+use gmp::rand::RandState;
+use num::{One, Zero, Integer};
+use num::traits::{FromPrimitive, CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, Num};
 use rand::Rng;
-use num::Integer;
 
-#[deriving(Clone, PartialEq, Eq, PartialOrd, Ord, Zero)]
+//#[deriving(Clone, PartialEq, Eq, PartialOrd, Ord, Zero)]
 pub struct BigUint {
     data: Mpz
 }
 
 impl BigUint {
-    pub fn from_str_radix(s: &str, radix: uint) -> Option<BigUint> {
+    pub fn from_str_radix(s: &str, radix: usize) -> Option<BigUint> {
         let data = Mpz::from_str_radix(s, radix);
         match data {
             Some(data) => Some(BigUint{ data: data }),
@@ -32,7 +33,7 @@ impl BigUint {
         }
     }
 
-    pub fn bits(&self) -> uint {
+    pub fn bits(&self) -> usize {
         self.data.bit_length()
     }
 
@@ -85,16 +86,16 @@ macro_rules! impl_to_biguint(
     }
 );
 
-impl_to_biguint!(int,  FromPrimitive::from_int);
-impl_to_biguint!(i8,   FromPrimitive::from_i8);
-impl_to_biguint!(i16,  FromPrimitive::from_i16);
-impl_to_biguint!(i32,  FromPrimitive::from_i32);
-impl_to_biguint!(i64,  FromPrimitive::from_i64);
-impl_to_biguint!(uint, FromPrimitive::from_uint);
-impl_to_biguint!(u8,   FromPrimitive::from_u8);
-impl_to_biguint!(u16,  FromPrimitive::from_u16);
-impl_to_biguint!(u32,  FromPrimitive::from_u32);
-impl_to_biguint!(u64,  FromPrimitive::from_u64);
+impl_to_biguint!(isize, FromPrimitive::from_int);
+impl_to_biguint!(i8,    FromPrimitive::from_i8);
+impl_to_biguint!(i16,   FromPrimitive::from_i16);
+impl_to_biguint!(i32,   FromPrimitive::from_i32);
+impl_to_biguint!(i64,   FromPrimitive::from_i64);
+impl_to_biguint!(usize, FromPrimitive::from_uint);
+impl_to_biguint!(u8,    FromPrimitive::from_u8);
+impl_to_biguint!(u16,   FromPrimitive::from_u16);
+impl_to_biguint!(u32,   FromPrimitive::from_u32);
+impl_to_biguint!(u64,   FromPrimitive::from_u64);
 
 impl FromStr for BigUint {
     fn from_str(s: &str) -> Option<BigUint> {
@@ -106,42 +107,45 @@ impl FromStr for BigUint {
     }
 }
 
+/*
 impl ToStrRadix for BigUint {
-    fn to_str_radix(&self, radix: uint) -> String {
+    fn to_str_radix(&self, radix: usize) -> String {
         self.data.to_str_radix(radix)
     }
 }
+*/
 
-impl fmt::Show for BigUint {
+impl fmt::Display for BigUint {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_str_radix(10))
     }
 }
 
-impl Add<BigUint, BigUint> for BigUint {
-    fn add(&self, other: &BigUint) -> BigUint {
+impl CheckedAdd for BigUint {
+    fn checked_add(&self, other: &BigUint) -> BigUint {
         BigUint{ data: self.data.add(&other.data) }
     }
 }
 
-impl Sub<BigUint, BigUint> for BigUint {
-    fn sub(&self, other: &BigUint) -> BigUint {
+impl CheckedSub for BigUint {
+    fn checked_sub(&self, other: &BigUint) -> BigUint {
         BigUint{ data: self.data.sub(&other.data) }
     }
 }
 
-impl Mul<BigUint, BigUint> for BigUint {
-    fn mul(&self, other: &BigUint) -> BigUint {
+impl CheckedMul for BigUint {
+    fn checked_mul(&self, other: &BigUint) -> BigUint {
         BigUint{ data: self.data.mul(&other.data) }
     }
 }
 
-impl Div<BigUint, BigUint> for BigUint {
-    fn div(&self, other: &BigUint) -> BigUint {
+impl CheckedDiv for BigUint {
+    fn checked_div(&self, other: &BigUint) -> BigUint {
         BigUint{ data: self.data.div(&other.data) }
     }
 }
 
+/*
 impl Rem<BigUint, BigUint> for BigUint {
     fn rem(&self, other: &BigUint) -> BigUint {
         BigUint{ data: self.data.rem(&other.data) }
@@ -164,6 +168,7 @@ impl Shr<uint, BigUint> for BigUint {
 impl Neg<BigUint> for BigUint {
     fn neg(&self) -> BigUint { fail!() }
 }
+*/
 
 impl Num for BigUint {}
 
@@ -184,10 +189,12 @@ impl Integer for BigUint {
         BigUint { data: self.data.lcm(&other.data) }
     }
 
+    /*
     #[inline]
-    fn divides(&self, other: &BigUint) -> bool {
+    fn checked_divides(&self, other: &BigUint) -> bool {
         other.is_multiple_of(self)
     }
+    */
 
     fn is_multiple_of(&self, other: &BigUint) -> bool {
         self.data.is_multiple_of(&other.data)
@@ -202,7 +209,7 @@ impl Integer for BigUint {
     }
 }
 
-#[deriving(Clone, PartialEq, Eq, PartialOrd, Ord, Zero)]
+//#[deriving(Clone, PartialEq, Eq, PartialOrd, Ord, Zero)]
 pub struct BigInt {
     data: Mpz
 }
@@ -239,47 +246,51 @@ impl FromPrimitive for BigInt {
     }
 }
 
+/*
 impl ToStrRadix for BigInt {
-    fn to_str_radix(&self, radix: uint) -> String {
+    fn to_str_radix(&self, radix: usize) -> String {
         self.data.to_str_radix(radix)
     }
 }
+*/
 
-impl fmt::Show for BigInt {
+impl fmt::Display for BigInt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_str_radix(10))
     }
 }
 
-impl Add<BigInt, BigInt> for BigInt {
-    fn add(&self, other: &BigInt) -> BigInt {
+impl CheckedAdd for BigInt {
+    fn checked_add(&self, other: &BigInt) -> BigInt {
         BigInt{ data: self.data.add(&other.data) }
     }
 }
 
-impl Sub<BigInt, BigInt> for BigInt {
-    fn sub(&self, other: &BigInt) -> BigInt {
+impl CheckedSub for BigInt {
+    fn checked_sub(&self, other: &BigInt) -> BigInt {
         BigInt{ data: self.data.sub(&other.data) }
     }
 }
 
-impl Mul<BigInt, BigInt> for BigInt {
-    fn mul(&self, other: &BigInt) -> BigInt {
+impl CheckedMul for BigInt {
+    fn checked_mul(&self, other: &BigInt) -> BigInt {
         BigInt{ data: self.data.mul(&other.data) }
     }
 }
 
-impl Div<BigInt, BigInt> for BigInt {
-    fn div(&self, other: &BigInt) -> BigInt {
+impl CheckedDiv for BigInt {
+    fn checked_div(&self, other: &BigInt) -> BigInt {
         BigInt{ data: self.data.div(&other.data) }
     }
 }
 
+/*
 impl Rem<BigInt, BigInt> for BigInt {
     fn rem(&self, other: &BigInt) -> BigInt {
         BigInt{ data: self.data.rem(&other.data) }
     }
 }
+*/
 
 impl ToBigUint for BigInt {
     fn to_biguint(&self) -> Option<BigUint> {
@@ -297,16 +308,16 @@ pub trait ToBigInt {
 
 impl ToBigInt for BigUint {
     fn to_bigint(&self) -> Option<BigInt> {
-       Some(BigInt{ data: self.data.clone() }) 
+       Some(BigInt{ data: self.data.clone() })
     }
 }
 
 pub trait RandBigInt {
     /// Generate a random `BigUint` of the given bit size.
-    fn gen_biguint(&mut self, bit_size: uint) -> BigUint;
+    fn gen_biguint(&mut self, bit_size: usize) -> BigUint;
 
     // /// Generate a random BigInt of the given bit size.
-    // fn gen_bigint(&mut self, bit_size: uint) -> BigInt;
+    // fn gen_bigint(&mut self, bit_size: usize) -> BigInt;
 
     /// Generate a random `BigUint` less than the given bound. Fails
     /// when the bound is zero.
@@ -324,7 +335,7 @@ pub trait RandBigInt {
 }
 
 impl<R: Rng> RandBigInt for R {
-    fn gen_biguint(&mut self, bit_size: uint) -> BigUint {
+    fn gen_biguint(&mut self, bit_size: usize) -> BigUint {
         let mut state = RandState::new();
         let seed: c_ulong = self.gen();
         state.seed_ui(seed);
@@ -333,7 +344,7 @@ impl<R: Rng> RandBigInt for R {
     }
 
     fn gen_biguint_below(&mut self, bound: &BigUint) -> BigUint {
-        // FIXME Add assertion once is_zero is implemented
+        // FIXME CheckedAdd assertion once is_zero is implemented
         // assert!(!bound.is_zero());
 
         let mut state = RandState::new();
@@ -344,7 +355,7 @@ impl<R: Rng> RandBigInt for R {
     }
 
     fn gen_biguint_range(&mut self, lbound: &BigUint, ubound: &BigUint) -> BigUint {
-        // FIXME Add assertion once cmp::Ord is implemented
+        // FIXME CheckedAdd assertion once cmp::Ord is implemented
         // assert!(lbound < ubound);
 
         return *lbound + self.gen_biguint_below(&(*ubound - *lbound));
